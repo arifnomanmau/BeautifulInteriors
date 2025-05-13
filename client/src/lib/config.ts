@@ -1,4 +1,10 @@
-// Base URL for API requests
-export const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://beautiful-interiors.vercel.app' // Replace with your actual Vercel domain
-  : ''; // Empty string for local development (same origin) 
+// Base URL for API requests - fixed to avoid initialization errors
+let API_BASE_URL = '';
+
+// Only run this in browser environment to avoid SSR issues
+if (typeof window !== 'undefined') {
+  // Use window.location.origin as a safe default in production
+  API_BASE_URL = window.location.origin;
+}
+
+export { API_BASE_URL }; 
