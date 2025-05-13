@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 4px; overflow: auto; }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Beautiful Interiors API Test</h1>
+  
+  <div>
+    <h2>Test API Connection</h2>
+    <button onclick="testPing()">Test Ping</button>
+    <div id="ping-result"></div>
+  </div>
+  
+  <div>
+    <h2>Test Login</h2>
+    <div>
+      <label>Username: <input id="username" value="admin" /></label><br>
+      <label>Password: <input id="password" type="password" value="admin123" /></label><br>
+      <button onclick="testLogin()">Test Login</button>
+    </div>
+    <div id="login-result"></div>
+  </div>
+
+  <script>
+    // Test ping endpoint
+    async function testPing() {
+      const resultDiv = document.getElementById('ping-result');
+      resultDiv.innerHTML = 'Testing...';
+      
+      try {
+        const response = await fetch('/api/ping');
+        const data = await response.json();
+        resultDiv.innerHTML = `
+          <p class="success">Success!</p>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <p class="error">Error: ${error.message}</p>
+          <p>This indicates your API server is not responding.</p>
+        `;
+      }
+    }
+    
+    // Test login endpoint
+    async function testLogin() {
+      const resultDiv = document.getElementById('login-result');
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
+      resultDiv.innerHTML = 'Testing...';
+      
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        resultDiv.innerHTML = `
+          <p class="success">Response received!</p>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <p class="error">Error: ${error.message}</p>
+          <p>This indicates there might be an issue with your login API.</p>
+        `;
+      }
+    }
+  </script>
+</body>
+</html> 
