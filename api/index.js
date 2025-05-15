@@ -69,7 +69,17 @@ if (typeof global._dataStore === 'undefined') {
 // Get the data store
 const dataStore = global._dataStore;
 
+// Generate a random instance ID for debugging
+if (!global._instanceId) {
+  global._instanceId = Math.random().toString(36).substring(2, 10);
+  global._instanceCreatedAt = new Date().toISOString();
+  global._requestCount = 0;
+}
+
 export default async function handler(req, res) {
+  // Count requests for debugging
+  global._requestCount = (global._requestCount || 0) + 1;
+
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PATCH, DELETE');
@@ -86,7 +96,7 @@ export default async function handler(req, res) {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     path = url.pathname.replace(/^\/api/, '');
-    console.log('API request to:', path, 'Method:', req.method, 'Instance ID:', process.env.AWS_LAMBDA_FUNCTION_NAME || 'local');
+    console.log(`API request #${global._requestCount} to: ${path}, Method: ${req.method}, Instance: ${global._instanceId}`);
   } catch (error) {
     console.error('Error parsing URL:', error);
     path = req.url.replace(/^\/api/, '');
@@ -99,7 +109,7 @@ export default async function handler(req, res) {
       return res.status(200).json({
         status: 'ok',
         message: 'API is running',
-        instanceId: process.env.AWS_LAMBDA_FUNCTION_NAME || 'local',
+        instanceId: global._instanceId,
         timestamp: new Date().toISOString()
       });
     }
@@ -107,7 +117,9 @@ export default async function handler(req, res) {
     // Debug endpoint to check data store state
     if (path === '/debug-store') {
       return res.status(200).json({
-        instanceId: process.env.AWS_LAMBDA_FUNCTION_NAME || 'local',
+        instanceId: global._instanceId,
+        createdAt: global._instanceCreatedAt,
+        requestCount: global._requestCount,
         hasDataStore: typeof global._dataStore !== 'undefined',
         portfolioItemsCount: (dataStore.portfolioItems || []).length,
         testimonialsCount: (dataStore.testimonials || []).length,
@@ -361,13 +373,20 @@ export default async function handler(req, res) {
           }
           
           // Process date if needed
-          if (data.date && typeof data.date !== 'string') {
-            try {
-              data.date = new Date(data.date).toISOString();
-            } catch (e) {
-              console.error('Error converting date:', e);
-              data.date = new Date().toISOString();
+          if (data && data.date) {
+            // If date is already an ISO string, keep it as is
+            if (typeof data.date !== 'string') {
+              try {
+                // Try to parse as date if it's not a string
+                data.date = new Date(data.date).toISOString();
+              } catch (e) {
+                console.error('Error converting date:', e);
+                data.date = new Date().toISOString();
+              }
             }
+          } else if (data) {
+            // If no date is provided, use current date
+            data.date = new Date().toISOString();
           }
           
           // Make sure consultations exists
@@ -474,7 +493,7 @@ export default async function handler(req, res) {
     return res.status(404).json({ 
       error: 'Not found', 
       path: path, 
-      instanceId: process.env.AWS_LAMBDA_FUNCTION_NAME || 'local' 
+      instanceId: global._instanceId 
     });
     
   } catch (error) {
@@ -482,7 +501,7 @@ export default async function handler(req, res) {
     res.status(500).json({ 
       error: 'Internal server error', 
       message: error.message,
-      instanceId: process.env.AWS_LAMBDA_FUNCTION_NAME || 'local' 
+      instanceId: global._instanceId 
     });
   }
 }

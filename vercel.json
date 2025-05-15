@@ -1,25 +1,12 @@
 {
   "version": 2,
-  "functions": {
-    "api/login.js": {
-      "memory": 1024,
-      "maxDuration": 10
-    },
-    "api/user.js": {
-      "memory": 1024,
-      "maxDuration": 10
-    },
-    "api/consultations.js": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  },
+  "builds": [
+    { "src": "api/index.js", "use": "@vercel/node" },
+    { "src": "client/package.json", "use": "@vercel/static-build", "config": { "distDir": "build" } }
+  ],
   "routes": [
-    { "src": "/api/login", "dest": "/api/login.js" },
-    { "src": "/api/user", "dest": "/api/user.js" },
-    { "src": "/api/consultations", "dest": "/api/consultations.js" },
     { "src": "/api/(.*)", "dest": "/api/index.js" },
     { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    { "src": "/(.*)", "dest": "/client/build/$1" }
   ]
 }
