@@ -43,11 +43,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: LoginData) => {
       console.log('Attempting login with credentials:', credentials.username);
       try {
-        const data = await apiRequest<any>("POST", "/api/login", credentials);
+        const data = await apiRequest<LoginResponse>("POST", "/api/login", credentials);
         console.log('Login response:', data);
         
-        if (!data || typeof data !== 'object' || !data.user) {
-          console.error('Invalid response format:', data);
+        if (!data.user) {
+          console.error('Invalid response format - missing user object');
           throw new Error("Invalid response from server - missing user data");
         }
         

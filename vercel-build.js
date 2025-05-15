@@ -6,35 +6,31 @@ try {
   console.log('Starting custom build process...');
   
   // Install dependencies
-  console.log('Installing root dependencies...');
+  console.log('Installing dependencies...');
   execSync('npm install', { stdio: 'inherit' });
   
-  // Build client
-  console.log('Building client...');
-  try {
-    // Create client build directory if it doesn't exist
-    if (!fs.existsSync(path.join(__dirname, 'dist'))) {
-      fs.mkdirSync(path.join(__dirname, 'dist'));
+  // Create a build.mjs file that uses import() to dynamically load vite
+  const buildScript = `
+  async function build() {
+    try {
+      const vite = await import('vite');
+      await vite.build();
+      console.log('Build completed successfully');
+    } catch (error) {
+      console.error('Build failed:', error);
+      process.exit(1);
     }
-    if (!fs.existsSync(path.join(__dirname, 'dist/client'))) {
-      fs.mkdirSync(path.join(__dirname, 'dist/client'));
-    }
-    
-    // Install client dependencies
-    console.log('Installing client dependencies...');
-    execSync('cd client && npm install', { stdio: 'inherit' });
-    
-    // Build client
-    console.log('Running client build...');
-    execSync('cd client && npx vite build --outDir ../dist/client', { stdio: 'inherit' });
-    
-    console.log('Client build completed successfully');
-  } catch (error) {
-    console.error('Client build failed:', error);
-    process.exit(1);
   }
   
-  console.log('Build process completed successfully');
+  build();
+  `;
+  
+  fs.writeFileSync(path.join(__dirname, 'build.mjs'), buildScript);
+  
+  // Run the build script
+  console.log('Running build script...');
+  execSync('node build.mjs', { stdio: 'inherit' });
+  
 } catch (error) {
   console.error('Build failed:', error);
   process.exit(1);
