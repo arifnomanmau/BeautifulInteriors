@@ -45,18 +45,40 @@ export default function handler(req, res) {
   // Handle POST request to create a new consultation
   if (req.method === 'POST') {
     try {
-      // Log the received data
-      console.log('Received consultation data:', req.body);
+      // Log the received data and headers
+      console.log('Request headers:', req.headers);
+      console.log('Received consultation data (raw):', req.body);
       
       // Parse request body if it's a string
       let data = req.body;
       if (typeof data === 'string') {
         try {
           data = JSON.parse(data);
+          console.log('Parsed body:', data);
         } catch (e) {
           console.error('Failed to parse request body:', e);
         }
       }
+      
+      // Ensure date field is properly formatted
+      if (data.date) {
+        // If date is already an ISO string, keep it as is
+        if (typeof data.date !== 'string') {
+          try {
+            // Try to parse as date if it's not a string
+            data.date = new Date(data.date).toISOString();
+          } catch (e) {
+            console.error('Error converting date:', e);
+            // Fall back to current date
+            data.date = new Date().toISOString();
+          }
+        }
+      } else {
+        // If no date is provided, use current date
+        data.date = new Date().toISOString();
+      }
+      
+      console.log('Processed consultation data:', data);
       
       // Return success response with the created consultation
       return res.status(201).json({
