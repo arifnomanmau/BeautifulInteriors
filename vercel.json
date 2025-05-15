@@ -10,7 +10,7 @@
   "outputDirectory": "dist/client",
   "routes": [
     { "handle": "filesystem" },
-    { "src": "/api/(.*)", "dest": "/api/index.js" },
+    { "src": "/api/(.*)", "dest": "/api" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
