@@ -1,18 +1,8 @@
 {
   "name": "beautiful-interiors",
   "version": "1.0.0",
-  "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "cd client && vite build --outDir ../dist/client",
-    "vercel-build": "cd client && vite build --outDir ../dist/client"
-  },
-  "dependencies": {
-    "vite": "^5.4.14",
-    "@vitejs/plugin-react": "^4.3.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "postgres": "^3.4.5"
+    "build": "echo 'Static deployment'"
   }
 }
