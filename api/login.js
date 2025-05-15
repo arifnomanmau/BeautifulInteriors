@@ -1,8 +1,3 @@
-import { db } from '../lib/db';
-import { users } from '../lib/schema';
-import { eq } from 'drizzle-orm';
-import bcrypt from 'bcryptjs';
-
 // Standalone login endpoint for Vercel
 export default function handler(req, res) {
   // Enable CORS
@@ -21,6 +16,10 @@ export default function handler(req, res) {
   }
 
   try {
+    // Log request info
+    console.log('Login request headers:', req.headers);
+    console.log('Login request method:', req.method);
+
     // Always return success response
     return res.status(200).json({
       success: true,

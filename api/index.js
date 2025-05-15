@@ -1,7 +1,3 @@
-import { db } from '../lib/db';
-import { portfolioItems, testimonials, consultations, users } from '../lib/schema';
-import { eq, sql } from 'drizzle-orm';
-
 // Consolidated API handler for all endpoints
 export default async function handler(req, res) {
   // Enable CORS
