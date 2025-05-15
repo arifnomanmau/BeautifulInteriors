@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "node build.js",
+  "buildCommand": "node build.cjs",
   "functions": {
     "api/login.js": {
       "memory": 1024,
