@@ -94,6 +94,13 @@ export default async function handler(req, res) {
               featured: true
             }
           ]);
+        } else if (req.method === 'POST') {
+          // Create a new portfolio item
+          return res.status(201).json({
+            id: 3, // Generate a new ID
+            ...req.body,
+            createdAt: new Date().toISOString()
+          });
         }
       } else {
         // Single item endpoint
@@ -111,6 +118,70 @@ export default async function handler(req, res) {
             id: id,
             ...req.body,
             updated: true
+          });
+        } else if (req.method === 'DELETE') {
+          return res.status(200).json({
+            id: id,
+            deleted: true
+          });
+        }
+      }
+    }
+    
+    // Testimonials endpoints
+    if (path.startsWith('/testimonials')) {
+      const segments = path.split('/').filter(Boolean);
+      const id = segments.length > 1 ? parseInt(segments[1]) : null;
+      
+      // Collection endpoint
+      if (!id) {
+        if (req.method === 'GET') {
+          // Return hardcoded testimonials
+          return res.status(200).json([
+            {
+              id: 1,
+              name: "John Smith",
+              role: "Homeowner",
+              content: "Beautiful Interiors transformed our living space completely. Their attention to detail and understanding of our needs was exceptional.",
+              imageUrl: "https://randomuser.me/api/portraits/men/1.jpg"
+            },
+            {
+              id: 2,
+              name: "Sarah Johnson",
+              role: "Business Owner",
+              content: "The redesign of our office has made a huge difference in our work environment. Our team loves the new space!",
+              imageUrl: "https://randomuser.me/api/portraits/women/2.jpg"
+            }
+          ]);
+        } else if (req.method === 'POST') {
+          // Create a new testimonial
+          const newId = Math.floor(Math.random() * 1000) + 3;
+          return res.status(201).json({
+            id: newId,
+            ...req.body,
+            createdAt: new Date().toISOString()
+          });
+        }
+      } else {
+        // Single testimonial endpoint
+        if (req.method === 'GET') {
+          return res.status(200).json({
+            id: id,
+            name: `Testimonial ${id}`,
+            role: "Customer",
+            content: "Sample testimonial content",
+            imageUrl: "https://randomuser.me/api/portraits/men/3.jpg"
+          });
+        } else if (req.method === 'PATCH') {
+          return res.status(200).json({
+            id: id,
+            ...req.body,
+            updated: true
+          });
+        } else if (req.method === 'DELETE') {
+          return res.status(200).json({
+            id: id,
+            deleted: true
           });
         }
       }
