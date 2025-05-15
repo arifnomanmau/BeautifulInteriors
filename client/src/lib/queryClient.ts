@@ -40,14 +40,9 @@ export async function apiRequest<T>(
       throw new Error(errorMessage);
     }
 
-    try {
-      const responseData = await response.json();
-      console.log('API response data:', responseData);
-      return responseData;
-    } catch (e) {
-      console.error('Error parsing JSON response:', e);
-      throw new Error('Invalid JSON response from server');
-    }
+    const data = await response.json();
+    console.log('API response data:', data);
+    return data;
   } catch (error) {
     console.error('API Request Error:', error);
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
@@ -63,32 +58,21 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    try {
-      const apiPath = `${API_BASE_URL}${queryKey[0] as string}`;
-      console.log('Making query to:', apiPath);
-      
-      const res = await fetch(apiPath, {
-        credentials: "include",
-      });
+    const apiPath = `${API_BASE_URL}${queryKey[0] as string}`;
+    console.log('Making query to:', apiPath);
+    
+    const res = await fetch(apiPath, {
+      credentials: "include",
+    });
 
-      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-        return null;
-      }
-
-      await throwIfResNotOk(res);
-      
-      try {
-        const data = await res.json();
-        console.log('Query response data:', data);
-        return data;
-      } catch (e) {
-        console.error('Error parsing JSON response:', e);
-        throw new Error('Invalid JSON response from server');
-      }
-    } catch (error) {
-      console.error('Query error:', error);
-      throw error;
+    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      return null;
     }
+
+    await throwIfResNotOk(res);
+    const data = await res.json();
+    console.log('Query response data:', data);
+    return data;
   };
 
 export const queryClient = new QueryClient({
