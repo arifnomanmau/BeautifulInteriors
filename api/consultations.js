@@ -1,14 +1,39 @@
 // Standalone consultations endpoint for Vercel
-export default function handler(req, res) {
-  // Access the global data store
-  const dataStore = global._dataStore || {
-    consultations: []
-  };
-  
-  if (!dataStore.consultations) {
-    dataStore.consultations = [];
-  }
 
+// Default data to initialize with
+const DEFAULT_CONSULTATIONS = [
+  {
+    id: 1,
+    name: 'Michael Johnson',
+    email: 'michael@example.com',
+    phone: '555-1234',
+    date: new Date().toISOString(),
+    projectType: 'Home Renovation',
+    requirements: 'Looking to renovate my living room',
+    status: 'pending'
+  },
+  {
+    id: 2,
+    name: 'Sarah Williams',
+    email: 'sarah@example.com',
+    phone: '555-5678',
+    date: new Date().toISOString(),
+    projectType: 'Office Design',
+    requirements: 'Need help designing our new office space',
+    status: 'confirmed'
+  }
+];
+
+// Create a global variable to store data between requests in the same instance
+if (typeof global._dataStore === 'undefined') {
+  global._dataStore = { consultations: [...DEFAULT_CONSULTATIONS] };
+  console.log('Initialized global data store with default consultations');
+}
+
+// Get the data store
+const dataStore = global._dataStore;
+
+export default function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -18,6 +43,11 @@ export default function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
+  }
+
+  // Initialize consultations if it doesn't exist
+  if (!dataStore.consultations) {
+    dataStore.consultations = [...DEFAULT_CONSULTATIONS];
   }
 
   // Handle GET request to list consultations
@@ -77,13 +107,16 @@ export default function handler(req, res) {
       
       dataStore.consultations.push(newConsultation);
       
+      console.log(`Added new consultation (ID: ${newId}). Total count: ${dataStore.consultations.length}`);
+      
       // Return success response with the created consultation
       return res.status(201).json(newConsultation);
     } catch (error) {
       console.error('Error creating consultation:', error);
       return res.status(500).json({
         error: 'Failed to create consultation',
-        message: error.message
+        message: error.message,
+        instanceId: process.env.AWS_LAMBDA_FUNCTION_NAME || 'local'
       });
     }
   }

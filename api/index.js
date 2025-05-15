@@ -1,7 +1,7 @@
 // Consolidated API handler for all endpoints
 
-// In-memory data store for storing submissions between requests
-const dataStore = {
+// Default data to initialize with
+const DEFAULT_DATA = {
   portfolioItems: [
     {
       id: 1,
@@ -60,6 +60,15 @@ const dataStore = {
   ]
 };
 
+// Create a global variable to store data between requests in the same instance
+if (typeof global._dataStore === 'undefined') {
+  global._dataStore = { ...DEFAULT_DATA };
+  console.log('Initialized global data store with default data');
+}
+
+// Get the data store
+const dataStore = global._dataStore;
+
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -77,7 +86,7 @@ export default async function handler(req, res) {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     path = url.pathname.replace(/^\/api/, '');
-    console.log('API request to:', path, 'Method:', req.method);
+    console.log('API request to:', path, 'Method:', req.method, 'Instance ID:', process.env.AWS_LAMBDA_FUNCTION_NAME || 'local');
   } catch (error) {
     console.error('Error parsing URL:', error);
     path = req.url.replace(/^\/api/, '');
@@ -90,6 +99,19 @@ export default async function handler(req, res) {
       return res.status(200).json({
         status: 'ok',
         message: 'API is running',
+        instanceId: process.env.AWS_LAMBDA_FUNCTION_NAME || 'local',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Debug endpoint to check data store state
+    if (path === '/debug-store') {
+      return res.status(200).json({
+        instanceId: process.env.AWS_LAMBDA_FUNCTION_NAME || 'local',
+        hasDataStore: typeof global._dataStore !== 'undefined',
+        portfolioItemsCount: (dataStore.portfolioItems || []).length,
+        testimonialsCount: (dataStore.testimonials || []).length,
+        consultationsCount: (dataStore.consultations || []).length,
         timestamp: new Date().toISOString()
       });
     }
@@ -137,7 +159,7 @@ export default async function handler(req, res) {
       if (!id) {
         if (req.method === 'GET') {
           // Return all portfolio items from data store
-          return res.status(200).json(dataStore.portfolioItems);
+          return res.status(200).json(dataStore.portfolioItems || []);
         } else if (req.method === 'POST') {
           // Create a new portfolio item
           let data = req.body;
@@ -149,19 +171,30 @@ export default async function handler(req, res) {
             }
           }
           
-          const newId = Math.max(...dataStore.portfolioItems.map(item => item.id), 0) + 1;
+          // Make sure portfolioItems exists
+          if (!dataStore.portfolioItems) {
+            dataStore.portfolioItems = [];
+          }
+          
+          const newId = Math.max(...dataStore.portfolioItems.map(item => item.id || 0), 0) + 1;
           const newItem = {
             id: newId,
             ...data,
             createdAt: new Date().toISOString()
           };
           dataStore.portfolioItems.push(newItem);
+          
           return res.status(201).json(newItem);
         }
       } else {
+        // Make sure portfolioItems exists
+        if (!dataStore.portfolioItems) {
+          dataStore.portfolioItems = [];
+        }
+        
         // Find the portfolio item
         const itemIndex = dataStore.portfolioItems.findIndex(item => item.id === id);
-        const item = dataStore.portfolioItems[itemIndex];
+        const item = itemIndex >= 0 ? dataStore.portfolioItems[itemIndex] : null;
         
         // Single item endpoint
         if (req.method === 'GET') {
@@ -189,6 +222,7 @@ export default async function handler(req, res) {
             id: id // Ensure ID doesn't change
           };
           dataStore.portfolioItems[itemIndex] = updatedItem;
+          
           return res.status(200).json(updatedItem);
         } else if (req.method === 'DELETE') {
           if (!item) {
@@ -196,6 +230,7 @@ export default async function handler(req, res) {
           }
           
           dataStore.portfolioItems = dataStore.portfolioItems.filter(item => item.id !== id);
+          
           return res.status(200).json({
             id: id,
             deleted: true
@@ -212,6 +247,11 @@ export default async function handler(req, res) {
       // Collection endpoint
       if (!id) {
         if (req.method === 'GET') {
+          // Make sure testimonials exists
+          if (!dataStore.testimonials) {
+            dataStore.testimonials = [];
+          }
+          
           // Return all testimonials from data store
           return res.status(200).json(dataStore.testimonials);
         } else if (req.method === 'POST') {
@@ -225,19 +265,30 @@ export default async function handler(req, res) {
             }
           }
           
-          const newId = Math.max(...dataStore.testimonials.map(item => item.id), 0) + 1;
+          // Make sure testimonials exists
+          if (!dataStore.testimonials) {
+            dataStore.testimonials = [];
+          }
+          
+          const newId = Math.max(...dataStore.testimonials.map(item => item.id || 0), 0) + 1;
           const newTestimonial = {
             id: newId,
             ...data,
             createdAt: new Date().toISOString()
           };
           dataStore.testimonials.push(newTestimonial);
+          
           return res.status(201).json(newTestimonial);
         }
       } else {
+        // Make sure testimonials exists
+        if (!dataStore.testimonials) {
+          dataStore.testimonials = [];
+        }
+        
         // Find the testimonial
         const itemIndex = dataStore.testimonials.findIndex(item => item.id === id);
-        const item = dataStore.testimonials[itemIndex];
+        const item = itemIndex >= 0 ? dataStore.testimonials[itemIndex] : null;
         
         // Single testimonial endpoint
         if (req.method === 'GET') {
@@ -265,6 +316,7 @@ export default async function handler(req, res) {
             id: id // Ensure ID doesn't change
           };
           dataStore.testimonials[itemIndex] = updatedItem;
+          
           return res.status(200).json(updatedItem);
         } else if (req.method === 'DELETE') {
           if (!item) {
@@ -272,6 +324,7 @@ export default async function handler(req, res) {
           }
           
           dataStore.testimonials = dataStore.testimonials.filter(item => item.id !== id);
+          
           return res.status(200).json({
             id: id,
             deleted: true
@@ -289,6 +342,11 @@ export default async function handler(req, res) {
       // Collection endpoint
       if (!id) {
         if (req.method === 'GET') {
+          // Make sure consultations exists
+          if (!dataStore.consultations) {
+            dataStore.consultations = [];
+          }
+          
           // Return all consultations from data store
           return res.status(200).json(dataStore.consultations);
         } else if (req.method === 'POST') {
@@ -312,7 +370,12 @@ export default async function handler(req, res) {
             }
           }
           
-          const newId = Math.max(...dataStore.consultations.map(item => item.id), 0) + 1;
+          // Make sure consultations exists
+          if (!dataStore.consultations) {
+            dataStore.consultations = [];
+          }
+          
+          const newId = Math.max(...dataStore.consultations.map(item => item.id || 0), 0) + 1;
           const newConsultation = {
             id: newId,
             ...data,
@@ -320,12 +383,18 @@ export default async function handler(req, res) {
             createdAt: new Date().toISOString()
           };
           dataStore.consultations.push(newConsultation);
+          
           return res.status(201).json(newConsultation);
         }
       } else {
+        // Make sure consultations exists
+        if (!dataStore.consultations) {
+          dataStore.consultations = [];
+        }
+        
         // Find the consultation
         const itemIndex = dataStore.consultations.findIndex(item => item.id === id);
-        const item = dataStore.consultations[itemIndex];
+        const item = itemIndex >= 0 ? dataStore.consultations[itemIndex] : null;
         
         if (!item) {
           return res.status(404).json({ error: 'Consultation not found' });
@@ -388,9 +457,11 @@ export default async function handler(req, res) {
             id: id // Ensure ID doesn't change
           };
           dataStore.consultations[itemIndex] = updatedItem;
+          
           return res.status(200).json(updatedItem);
         } else if (req.method === 'DELETE') {
           dataStore.consultations = dataStore.consultations.filter(item => item.id !== id);
+          
           return res.status(200).json({
             id: id,
             deleted: true
@@ -400,13 +471,18 @@ export default async function handler(req, res) {
     }
     
     // Handle 404 for unmatched routes
-    return res.status(404).json({ error: 'Not found', path: path });
+    return res.status(404).json({ 
+      error: 'Not found', 
+      path: path, 
+      instanceId: process.env.AWS_LAMBDA_FUNCTION_NAME || 'local' 
+    });
     
   } catch (error) {
     console.error('API error:', error);
     res.status(500).json({ 
       error: 'Internal server error', 
-      message: error.message
+      message: error.message,
+      instanceId: process.env.AWS_LAMBDA_FUNCTION_NAME || 'local' 
     });
   }
 }
