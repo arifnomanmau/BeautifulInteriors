@@ -1,5 +1,14 @@
 // Standalone consultations endpoint for Vercel
 export default function handler(req, res) {
+  // Access the global data store
+  const dataStore = global._dataStore || {
+    consultations: []
+  };
+  
+  if (!dataStore.consultations) {
+    dataStore.consultations = [];
+  }
+
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -13,30 +22,7 @@ export default function handler(req, res) {
 
   // Handle GET request to list consultations
   if (req.method === 'GET') {
-    return res.status(200).json([
-      {
-        id: 1,
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '555-1234',
-        address: '123 Main St',
-        requirements: 'Looking for a living room redesign',
-        projectType: 'Residential',
-        date: new Date().toISOString(),
-        status: 'pending'
-      },
-      {
-        id: 2,
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        phone: '555-5678',
-        address: '456 Park Ave',
-        requirements: 'Office renovation needed',
-        projectType: 'Commercial',
-        date: new Date().toISOString(),
-        status: 'confirmed'
-      }
-    ]);
+    return res.status(200).json(dataStore.consultations);
   }
 
   // Handle POST request to create a new consultation
@@ -80,13 +66,19 @@ export default function handler(req, res) {
       
       console.log('Processed consultation data:', data);
       
-      // Return success response with the created consultation
-      return res.status(201).json({
-        id: Math.floor(Math.random() * 1000) + 3, // Generate a random ID
+      // Create new consultation and add to dataStore
+      const newId = Math.max(...dataStore.consultations.map(item => item.id || 0), 0) + 1;
+      const newConsultation = {
+        id: newId,
         ...data,
         status: 'pending',
         createdAt: new Date().toISOString()
-      });
+      };
+      
+      dataStore.consultations.push(newConsultation);
+      
+      // Return success response with the created consultation
+      return res.status(201).json(newConsultation);
     } catch (error) {
       console.error('Error creating consultation:', error);
       return res.status(500).json({

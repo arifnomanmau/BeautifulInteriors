@@ -1,4 +1,65 @@
 // Consolidated API handler for all endpoints
+
+// In-memory data store for storing submissions between requests
+const dataStore = {
+  portfolioItems: [
+    {
+      id: 1,
+      title: 'Modern Living Room',
+      description: 'A sleek, contemporary living space',
+      imageUrl: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7',
+      category: 'Living Room',
+      featured: true
+    },
+    {
+      id: 2,
+      title: 'Minimalist Kitchen',
+      description: 'Clean lines and functional design',
+      imageUrl: 'https://images.unsplash.com/photo-1556911220-bff31c812dba',
+      category: 'Kitchen',
+      featured: true
+    }
+  ],
+  testimonials: [
+    {
+      id: 1,
+      name: "John Smith",
+      role: "Homeowner",
+      content: "Beautiful Interiors transformed our living space completely. Their attention to detail and understanding of our needs was exceptional.",
+      imageUrl: "https://randomuser.me/api/portraits/men/1.jpg"
+    },
+    {
+      id: 2,
+      name: "Sarah Johnson",
+      role: "Business Owner",
+      content: "The redesign of our office has made a huge difference in our work environment. Our team loves the new space!",
+      imageUrl: "https://randomuser.me/api/portraits/women/2.jpg"
+    }
+  ],
+  consultations: [
+    {
+      id: 1,
+      name: 'Michael Johnson',
+      email: 'michael@example.com',
+      phone: '555-1234',
+      date: new Date().toISOString(),
+      projectType: 'Home Renovation',
+      requirements: 'Looking to renovate my living room',
+      status: 'pending'
+    },
+    {
+      id: 2,
+      name: 'Sarah Williams',
+      email: 'sarah@example.com',
+      phone: '555-5678',
+      date: new Date().toISOString(),
+      projectType: 'Office Design',
+      requirements: 'Need help designing our new office space',
+      status: 'confirmed'
+    }
+  ]
+};
+
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -75,51 +136,66 @@ export default async function handler(req, res) {
       // Collection endpoint
       if (!id) {
         if (req.method === 'GET') {
-          // Return hardcoded portfolio items
-          return res.status(200).json([
-            {
-              id: 1,
-              title: 'Modern Living Room',
-              description: 'A sleek, contemporary living space',
-              imageUrl: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7',
-              category: 'Living Room',
-              featured: true
-            },
-            {
-              id: 2,
-              title: 'Minimalist Kitchen',
-              description: 'Clean lines and functional design',
-              imageUrl: 'https://images.unsplash.com/photo-1556911220-bff31c812dba',
-              category: 'Kitchen',
-              featured: true
-            }
-          ]);
+          // Return all portfolio items from data store
+          return res.status(200).json(dataStore.portfolioItems);
         } else if (req.method === 'POST') {
           // Create a new portfolio item
-          return res.status(201).json({
-            id: 3, // Generate a new ID
-            ...req.body,
+          let data = req.body;
+          if (typeof data === 'string') {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              console.error('Failed to parse request body:', e);
+            }
+          }
+          
+          const newId = Math.max(...dataStore.portfolioItems.map(item => item.id), 0) + 1;
+          const newItem = {
+            id: newId,
+            ...data,
             createdAt: new Date().toISOString()
-          });
+          };
+          dataStore.portfolioItems.push(newItem);
+          return res.status(201).json(newItem);
         }
       } else {
+        // Find the portfolio item
+        const itemIndex = dataStore.portfolioItems.findIndex(item => item.id === id);
+        const item = dataStore.portfolioItems[itemIndex];
+        
         // Single item endpoint
         if (req.method === 'GET') {
-          return res.status(200).json({
-            id: id,
-            title: `Portfolio Item ${id}`,
-            description: 'Sample description',
-            imageUrl: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7',
-            category: 'Sample',
-            featured: true
-          });
+          if (!item) {
+            return res.status(404).json({ error: 'Portfolio item not found' });
+          }
+          return res.status(200).json(item);
         } else if (req.method === 'PATCH') {
-          return res.status(200).json({
-            id: id,
-            ...req.body,
-            updated: true
-          });
+          if (!item) {
+            return res.status(404).json({ error: 'Portfolio item not found' });
+          }
+          
+          let data = req.body;
+          if (typeof data === 'string') {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              console.error('Failed to parse request body:', e);
+            }
+          }
+          
+          const updatedItem = {
+            ...item,
+            ...data,
+            id: id // Ensure ID doesn't change
+          };
+          dataStore.portfolioItems[itemIndex] = updatedItem;
+          return res.status(200).json(updatedItem);
         } else if (req.method === 'DELETE') {
+          if (!item) {
+            return res.status(404).json({ error: 'Portfolio item not found' });
+          }
+          
+          dataStore.portfolioItems = dataStore.portfolioItems.filter(item => item.id !== id);
           return res.status(200).json({
             id: id,
             deleted: true
@@ -136,49 +212,185 @@ export default async function handler(req, res) {
       // Collection endpoint
       if (!id) {
         if (req.method === 'GET') {
-          // Return hardcoded testimonials
-          return res.status(200).json([
-            {
-              id: 1,
-              name: "John Smith",
-              role: "Homeowner",
-              content: "Beautiful Interiors transformed our living space completely. Their attention to detail and understanding of our needs was exceptional.",
-              imageUrl: "https://randomuser.me/api/portraits/men/1.jpg"
-            },
-            {
-              id: 2,
-              name: "Sarah Johnson",
-              role: "Business Owner",
-              content: "The redesign of our office has made a huge difference in our work environment. Our team loves the new space!",
-              imageUrl: "https://randomuser.me/api/portraits/women/2.jpg"
-            }
-          ]);
+          // Return all testimonials from data store
+          return res.status(200).json(dataStore.testimonials);
         } else if (req.method === 'POST') {
           // Create a new testimonial
-          const newId = Math.floor(Math.random() * 1000) + 3;
-          return res.status(201).json({
+          let data = req.body;
+          if (typeof data === 'string') {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              console.error('Failed to parse request body:', e);
+            }
+          }
+          
+          const newId = Math.max(...dataStore.testimonials.map(item => item.id), 0) + 1;
+          const newTestimonial = {
             id: newId,
-            ...req.body,
+            ...data,
             createdAt: new Date().toISOString()
-          });
+          };
+          dataStore.testimonials.push(newTestimonial);
+          return res.status(201).json(newTestimonial);
         }
       } else {
+        // Find the testimonial
+        const itemIndex = dataStore.testimonials.findIndex(item => item.id === id);
+        const item = dataStore.testimonials[itemIndex];
+        
         // Single testimonial endpoint
         if (req.method === 'GET') {
-          return res.status(200).json({
-            id: id,
-            name: `Testimonial ${id}`,
-            role: "Customer",
-            content: "Sample testimonial content",
-            imageUrl: "https://randomuser.me/api/portraits/men/3.jpg"
-          });
+          if (!item) {
+            return res.status(404).json({ error: 'Testimonial not found' });
+          }
+          return res.status(200).json(item);
         } else if (req.method === 'PATCH') {
+          if (!item) {
+            return res.status(404).json({ error: 'Testimonial not found' });
+          }
+          
+          let data = req.body;
+          if (typeof data === 'string') {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              console.error('Failed to parse request body:', e);
+            }
+          }
+          
+          const updatedItem = {
+            ...item,
+            ...data,
+            id: id // Ensure ID doesn't change
+          };
+          dataStore.testimonials[itemIndex] = updatedItem;
+          return res.status(200).json(updatedItem);
+        } else if (req.method === 'DELETE') {
+          if (!item) {
+            return res.status(404).json({ error: 'Testimonial not found' });
+          }
+          
+          dataStore.testimonials = dataStore.testimonials.filter(item => item.id !== id);
           return res.status(200).json({
             id: id,
-            ...req.body,
-            updated: true
+            deleted: true
           });
+        }
+      }
+    }
+    
+    // Consultations endpoints (for both contact form submissions and bookings)
+    if (path.startsWith('/consultations')) {
+      const segments = path.split('/').filter(Boolean);
+      const id = segments.length > 1 ? parseInt(segments[1]) : null;
+      const action = segments.length > 2 ? segments[2] : null;
+      
+      // Collection endpoint
+      if (!id) {
+        if (req.method === 'GET') {
+          // Return all consultations from data store
+          return res.status(200).json(dataStore.consultations);
+        } else if (req.method === 'POST') {
+          // Create a new consultation
+          let data = req.body;
+          if (typeof data === 'string') {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              console.error('Failed to parse request body:', e);
+            }
+          }
+          
+          // Process date if needed
+          if (data.date && typeof data.date !== 'string') {
+            try {
+              data.date = new Date(data.date).toISOString();
+            } catch (e) {
+              console.error('Error converting date:', e);
+              data.date = new Date().toISOString();
+            }
+          }
+          
+          const newId = Math.max(...dataStore.consultations.map(item => item.id), 0) + 1;
+          const newConsultation = {
+            id: newId,
+            ...data,
+            status: 'pending',
+            createdAt: new Date().toISOString()
+          };
+          dataStore.consultations.push(newConsultation);
+          return res.status(201).json(newConsultation);
+        }
+      } else {
+        // Find the consultation
+        const itemIndex = dataStore.consultations.findIndex(item => item.id === id);
+        const item = dataStore.consultations[itemIndex];
+        
+        if (!item) {
+          return res.status(404).json({ error: 'Consultation not found' });
+        }
+        
+        // Handle status update
+        if (action === 'status' && req.method === 'PATCH') {
+          let data = req.body;
+          if (typeof data === 'string') {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              console.error('Failed to parse request body:', e);
+            }
+          }
+          
+          const updatedItem = {
+            ...item,
+            status: data.status
+          };
+          dataStore.consultations[itemIndex] = updatedItem;
+          return res.status(200).json(updatedItem);
+        }
+        
+        // Handle notes update
+        if (action === 'notes' && req.method === 'PATCH') {
+          let data = req.body;
+          if (typeof data === 'string') {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              console.error('Failed to parse request body:', e);
+            }
+          }
+          
+          const updatedItem = {
+            ...item,
+            notes: data.notes
+          };
+          dataStore.consultations[itemIndex] = updatedItem;
+          return res.status(200).json(updatedItem);
+        }
+        
+        // Single consultation endpoint
+        if (req.method === 'GET') {
+          return res.status(200).json(item);
+        } else if (req.method === 'PATCH') {
+          let data = req.body;
+          if (typeof data === 'string') {
+            try {
+              data = JSON.parse(data);
+            } catch (e) {
+              console.error('Failed to parse request body:', e);
+            }
+          }
+          
+          const updatedItem = {
+            ...item,
+            ...data,
+            id: id // Ensure ID doesn't change
+          };
+          dataStore.consultations[itemIndex] = updatedItem;
+          return res.status(200).json(updatedItem);
         } else if (req.method === 'DELETE') {
+          dataStore.consultations = dataStore.consultations.filter(item => item.id !== id);
           return res.status(200).json({
             id: id,
             deleted: true
