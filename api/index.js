@@ -91,19 +91,36 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Get the path from the URL
-  let path;
+  // Get the path from the URL with improved error handling
+  let path = '';
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     path = url.pathname.replace(/^\/api/, '');
     console.log(`API request #${global._requestCount} to: ${path}, Method: ${req.method}, Instance: ${global._instanceId}`);
   } catch (error) {
     console.error('Error parsing URL:', error);
-    path = req.url.replace(/^\/api/, '');
+    try {
+      path = req.url.replace(/^\/api/, '');
+    } catch (innerError) {
+      console.error('Critical error in URL parsing:', innerError);
+      path = '/';
+    }
     console.log('Fallback path parsing:', path);
   }
 
   try {
+    // Parse request body with better error handling
+    let body = req.body;
+    if (body && typeof body === 'string' && body.length > 0) {
+      try {
+        body = JSON.parse(body);
+        req.body = body; // Replace the original body with parsed version
+      } catch (e) {
+        console.error('Failed to parse request body as JSON:', e);
+        // Continue with the original body
+      }
+    }
+
     // Simple ping endpoint
     if (path === '/ping' || path === '' || path === '/') {
       return res.status(200).json({
@@ -500,7 +517,8 @@ export default async function handler(req, res) {
     console.error('API error:', error);
     res.status(500).json({ 
       error: 'Internal server error', 
-      message: error.message,
+      message: error.message || 'Unknown server error',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       instanceId: global._instanceId 
     });
   }
