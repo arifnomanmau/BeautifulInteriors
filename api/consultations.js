@@ -1,6 +1,3 @@
-import { db } from '../lib/db';
-import { consultations } from '../lib/schema';
-
 // Standalone consultations endpoint for Vercel
 export default function handler(req, res) {
   // Enable CORS
@@ -61,7 +58,7 @@ export default function handler(req, res) {
       }
       
       // Ensure date field is properly formatted
-      if (data.date) {
+      if (data && data.date) {
         // If date is already an ISO string, keep it as is
         if (typeof data.date !== 'string') {
           try {
@@ -73,9 +70,12 @@ export default function handler(req, res) {
             data.date = new Date().toISOString();
           }
         }
-      } else {
+      } else if (data) {
         // If no date is provided, use current date
         data.date = new Date().toISOString();
+      } else {
+        // If data is null or undefined, create an empty object
+        data = { date: new Date().toISOString() };
       }
       
       console.log('Processed consultation data:', data);
