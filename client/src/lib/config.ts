@@ -1,2 +1,2 @@
-// Base URL for API requests - explicitly set for production
-export const API_BASE_URL = 'https://your-vercel-domain.vercel.app'; // Replace with your actual domain 
+// Base URL for API requests
+export const API_BASE_URL = ''; // Empty string will use relative URLs 

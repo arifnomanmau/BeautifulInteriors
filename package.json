@@ -6,9 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "vercel-build": "vite build",
-    "preview": "vite preview",
-    "db:push": "drizzle-kit push"
+    "vercel-build": "vite build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
