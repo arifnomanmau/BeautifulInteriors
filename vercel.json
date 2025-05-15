@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "buildCommand": "node build.js",
   "functions": {
     "api/login.js": {
       "memory": 1024,
@@ -12,12 +13,22 @@
     "api/consultations.js": {
       "memory": 1024,
       "maxDuration": 10
+    },
+    "api/index.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    },
+    "api/portfolio.js": {
+      "memory": 1024,
+      "maxDuration": 10
     }
   },
+  "outputDirectory": "dist",
   "routes": [
     { "src": "/api/login", "dest": "/api/login.js" },
     { "src": "/api/user", "dest": "/api/user.js" },
     { "src": "/api/consultations", "dest": "/api/consultations.js" },
+    { "src": "/api/portfolio", "dest": "/api/portfolio.js" },
     { "src": "/api/(.*)", "dest": "/api/index.js" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
